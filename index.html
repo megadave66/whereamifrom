@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Where am I from?</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Where am I from?</h1>
+
+  <div id="locations">
+    <h3>Enter locations you've lived in:</h3>
+    <div class="location-input">
+      <input type="text" placeholder="Place" class="place">
+      <input type="number" placeholder="Years" class="years" min="1">
+    </div>
+  </div>
+  <button onclick="addLocationInput()">Add Another Place</button>
+
+  <div id="map"></div>
+  <p id="calculatedLocation"></p>
+
+  <button onclick="shareToSocialMedia()">Share on Social Media</button>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
