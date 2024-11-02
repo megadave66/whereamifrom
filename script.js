@@ -1,4 +1,5 @@
 let locations = [];
+let markers = []; // To store all markers for easy removal
 const map = L.map('map').setView([20, 0], 2);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -35,6 +36,10 @@ async function reverseGeocode(lat, lon) {
 }
 
 async function calculateWeightedAverage() {
+  // Remove all existing markers from the map
+  markers.forEach(marker => map.removeLayer(marker));
+  markers = []; // Clear the markers array
+
   locations = [];
   const inputs = document.querySelectorAll('.location-input');
   for (const input of inputs) {
@@ -44,18 +49,30 @@ async function calculateWeightedAverage() {
       const coords = await geocodeLocation(place);
       if (coords) {
         locations.push({ ...coords, years });
-        L.marker([coords.lat, coords.lon]).addTo(map)
+        const marker = L.marker([coords.lat, coords.lon]).addTo(map)
           .bindPopup(`${place} - ${years} years`).openPopup();
+        markers.push(marker); // Store the new marker
       }
     }
   }
+
   if (locations.length > 0) {
     const { avgLat, avgLon } = calculateAverageLocation();
     map.fitBounds(locations.map(loc => [loc.lat, loc.lon]));
+
     const calculatedLocationName = await reverseGeocode(avgLat, avgLon);
-    L.marker([avgLat, avgLon], { icon: L.icon({ iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png', iconSize: [38, 95] }) })
+    const redIcon = L.icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-red.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+    });
+
+    const avgMarker = L.marker([avgLat, avgLon], { icon: redIcon })
       .addTo(map)
       .bindPopup(`You are from ${calculatedLocationName}`).openPopup();
+    markers.push(avgMarker); // Store the average location marker
+
     document.getElementById('calculatedLocation').textContent =
       `Your average location: ${calculatedLocationName}`;
     document.getElementById('wikiLink').innerHTML = `
