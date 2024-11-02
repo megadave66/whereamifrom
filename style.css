@@ -34,7 +34,15 @@ button {
   margin-top: 10px;
 }
 
-#calculatedLocation {
+#calculatedLocation, #wikiLink {
   font-size: 1.2em;
   margin-top: 15px;
+}
+
+.share-buttons {
+  margin-top: 20px;
+}
+
+.share-buttons button {
+  margin: 5px;
 }
