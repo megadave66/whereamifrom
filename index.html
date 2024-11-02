@@ -22,8 +22,15 @@
 
   <div id="map"></div>
   <p id="calculatedLocation"></p>
+  <p id="wikiLink"></p>
 
-  <button onclick="shareToSocialMedia()">Share on Social Media</button>
+  <div class="share-buttons">
+    <h3>Share on Social Media:</h3>
+    <button onclick="shareToSocialMedia('twitter')">Twitter</button>
+    <button onclick="shareToSocialMedia('facebook')">Facebook</button>
+    <button onclick="shareToSocialMedia('whatsapp')">WhatsApp</button>
+    <button onclick="shareToSocialMedia('instagram')">Instagram</button>
+  </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="script.js"></script>
