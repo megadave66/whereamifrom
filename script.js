@@ -27,6 +27,13 @@ async function geocodeLocation(place) {
   return null;
 }
 
+async function reverseGeocode(lat, lon) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  return data.address.city || data.address.town || data.address.village || data.display_name;
+}
+
 async function calculateWeightedAverage() {
   locations = [];
   const inputs = document.querySelectorAll('.location-input');
@@ -44,10 +51,18 @@ async function calculateWeightedAverage() {
   }
   if (locations.length > 0) {
     const { avgLat, avgLon } = calculateAverageLocation();
-    const avgMarker = L.marker([avgLat, avgLon]).addTo(map)
-      .bindPopup("Where you are from").openPopup();
+    map.fitBounds(locations.map(loc => [loc.lat, loc.lon]));
+    const calculatedLocationName = await reverseGeocode(avgLat, avgLon);
+    L.marker([avgLat, avgLon], { icon: L.icon({ iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png', iconSize: [38, 95] }) })
+      .addTo(map)
+      .bindPopup(`You are from ${calculatedLocationName}`).openPopup();
     document.getElementById('calculatedLocation').textContent =
-      `Your average location: ${avgLat.toFixed(4)}, ${avgLon.toFixed(4)}`;
+      `Your average location: ${calculatedLocationName}`;
+    document.getElementById('wikiLink').innerHTML = `
+      <a href="https://en.wikipedia.org/wiki/${calculatedLocationName}" target="_blank">
+        Learn more about ${calculatedLocationName} on Wikipedia
+      </a>
+    `;
   }
 }
 
@@ -63,10 +78,20 @@ function calculateAverageLocation() {
   return { avgLat, avgLon };
 }
 
-function shareToSocialMedia() {
-  const avgLocationText = document.getElementById('calculatedLocation').textContent;
-  const shareText = `I am from ${avgLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+function shareToSocialMedia(platform) {
+  const calculatedLocationText = document.getElementById('calculatedLocation').textContent;
+  const shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
+  let url = '';
+  if (platform === 'twitter') {
+    url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+  } else if (platform === 'facebook') {
+    url = `https://www.facebook.com/sharer/sharer.php?u=https://megadave66.github.io/whereamifrom&quote=${encodeURIComponent(shareText)}`;
+  } else if (platform === 'whatsapp') {
+    url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  } else if (platform === 'instagram') {
+    alert('Instagram does not support direct sharing via URL. Please share manually.');
+    return;
+  }
   window.open(url, '_blank');
 }
 
