@@ -99,8 +99,7 @@ function calculateAverageLocation() {
 }
 
 function shareToSocialMedia(platform) {
-  // Ensure calculatedLocationText is set before shareText
-  const calculatedLocationText = document.getElementById('calculatedLocation').textContent.trim();
+  const calculatedLocationText = document.getElementById('calculatedLocation').textContent.trim(); // Ensure this line is correct
   const shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
   let url = '';
   
