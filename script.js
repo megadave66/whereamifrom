@@ -96,8 +96,8 @@ function calculateAverageLocation() {
 }
 
 function shareToSocialMedia(platform) {
-  const calculatedLocationText = document.getElementById('calculatedLocation').textContent.replace('Your average location:', '').trim();
-  const shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
+  shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
+  calculatedLocationText = document.getElementById('calculatedLocation').textContent.replace('Your average location:', '').trim();
   let url = '';
   
   if (platform === 'twitter') {
