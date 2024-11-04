@@ -99,7 +99,15 @@ function calculateAverageLocation() {
 }
 
 function shareToSocialMedia(platform) {
-  const calculatedLocationText = document.getElementById('calculatedLocation').textContent.trim(); // Ensure this line is correct
+  const calculatedLocationElement = document.getElementById('calculatedLocation');
+  
+  // Ensure that calculatedLocationElement has content before proceeding
+  if (!calculatedLocationElement || !calculatedLocationElement.textContent.trim()) {
+    alert("Please calculate your average location first!");
+    return;
+  }
+  
+  const calculatedLocationText = calculatedLocationElement.textContent.trim();
   const shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
   let url = '';
   
@@ -113,5 +121,6 @@ function shareToSocialMedia(platform) {
     alert('Instagram does not support direct sharing via URL. Please share manually.');
     return;
   }
+  
   window.open(url, '_blank');
 }
