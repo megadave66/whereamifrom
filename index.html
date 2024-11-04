@@ -1,11 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="description" content="Find out your average location based on the places you've lived in!">
+  <meta property="og:title" content="Where Am I From?">
+  <meta property="og:description" content="Calculate the average location where you have lived based on the places you've entered.">
+  <meta property="og:image" content="https://via.placeholder.com/1200x630.png?text=Where+Am+I+From"> <!-- Add an image URL here that represents your site -->
+  <meta property="og:url" content="https://megadave66.github.io/whereamifrom">
+  <meta property="og:type" content="website">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Where am I from?</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #locations {
+      margin-bottom: 20px;
+    }
+    .location-input {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    #map {
+      height: 400px;
+      width: 100%;
+      margin: 20px 0;
+    }
+    #calculatedLocation, #wikiLink {
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+    .share-buttons {
+      margin-top: 20px;
+    }
+    .share-buttons button {
+      margin: 5px;
+    }
+  </style>
 </head>
 <body>
 
@@ -19,6 +55,7 @@
     </div>
   </div>
   <button onclick="addLocationInput()">Add Another Place</button>
+  <button onclick="calculateWeightedAverage()">Where Am I From?</button>
 
   <div id="map"></div>
   <p id="calculatedLocation"></p>
@@ -29,10 +66,247 @@
     <button onclick="shareToSocialMedia('twitter')">Twitter</button>
     <button onclick="shareToSocialMedia('facebook')">Facebook</button>
     <button onclick="shareToSocialMedia('whatsapp')">WhatsApp</button>
-    <button onclick="shareToSocialMedia('instagram')">Instagram</button>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <script>
+    let locations = [];
+    let markers = [];
+    const map = L.map('map').setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    const blueIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/6681/6681926.png', // URL for blue person icon
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32],
+    });
+
+    const redIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/16000/16000511.png', // URL for red person icon
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32],
+    });
+
+    function addLocationInput() {
+      const container = document.createElement('div');
+      container.className = 'location-input';
+      container.innerHTML = `
+        <input type="text" placeholder="Place" class="place">
+        <input type="number" placeholder="Years" class="years" min="1">
+      `;
+      document.getElementById('locations').appendChild(container);
+    }
+
+    async function geocodeLocation(place) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon),
+        };
+      }
+      return null;
+    }
+
+    async function getNearestWikipediaLocation(lat, lon) {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=10000&gslimit=1&format=json&origin=*`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.query && data.query.geosearch.length > 0) {
+        return data.query.geosearch[0].title;
+      }
+      return null;  // No Wikipedia location found
+    }
+
+    async function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data && data.address) {
+        return data.address.city || data.address.town || data.address.village || data.display_name || "In the middle of the ocean";
+      }
+      return "In the middle of the ocean";
+    }
+
+    function getOceanOrSeaFromCoordinates(lat, lon) {
+      const oceansAndSeas = [
+        {
+          name: "Pacific Ocean",
+          bounds: {
+            latMin: -60,
+            latMax: 60,
+            lonMin: 100,
+            lonMax: -70,
+          },
+        },
+        {
+          name: "Atlantic Ocean",
+          bounds: {
+            latMin: -60,
+            latMax: 70,
+            lonMin: -100,
+            lonMax: 20,
+          },
+        },
+        {
+          name: "Indian Ocean",
+          bounds: {
+            latMin: -60,
+            latMax: 30,
+            lonMin: 20,
+            lonMax: 120,
+          },
+        },
+        {
+          name: "Southern Ocean",
+          bounds: {
+            latMin: -90,
+            latMax: -60,
+            lonMin: -180,
+            lonMax: 180,
+          },
+        },
+        {
+          name: "Arctic Ocean",
+          bounds: {
+            latMin: 60,
+            latMax: 90,
+            lonMin: -180,
+            lonMax: 180,
+          },
+        },
+        {
+          name: "Mediterranean Sea",
+          bounds: {
+            latMin: 30,
+            latMax: 45,
+            lonMin: -10,
+            lonMax: 40,
+          },
+        },
+        {
+          name: "Caribbean Sea",
+          bounds: {
+            latMin: 10,
+            latMax: 30,
+            lonMin: -90,
+            lonMax: -60,
+          },
+        },
+      ];
+
+      for (const oceanOrSea of oceansAndSeas) {
+        const { latMin, latMax, lonMin, lonMax } = oceanOrSea.bounds;
+        if (lat >= latMin && lat <= latMax && lon >= lonMin && lon <= lonMax) {
+          return oceanOrSea.name;
+        }
+      }
+      return null;
+    }
+
+    async function calculateWeightedAverage() {
+      markers.forEach(marker => map.removeLayer(marker));
+      markers = [];
+      locations = [];
+
+      const inputs = document.querySelectorAll('.location-input');
+      for (const input of inputs) {
+        const place = input.querySelector('.place').value;
+        const years = parseFloat(input.querySelector('.years').value);
+        if (place && years) {
+          const coords = await geocodeLocation(place);
+          if (coords) {
+            locations.push({ ...coords, years });
+            const marker = L.marker([coords.lat, coords.lon], { icon: blueIcon }).addTo(map)
+              .bindPopup(`${place} - ${years} years`).openPopup();
+            markers.push(marker);
+          }
+        }
+      }
+
+      if (locations.length > 0) {
+        const { avgLat, avgLon } = calculateAverageLocation();
+        map.fitBounds(locations.map(loc => [loc.lat, loc.lon]));
+
+        let calculatedLocationName = await getNearestWikipediaLocation(avgLat, avgLon);
+
+        if (!calculatedLocationName) {
+          // Fallback to OpenStreetMap reverse geocoding if Wikipedia has no result
+          calculatedLocationName = await reverseGeocode(avgLat, avgLon);
+        }
+
+        if (calculatedLocationName === "In the middle of the ocean") {
+          // Determine the ocean or sea based on coordinates
+          const oceanOrSea = getOceanOrSeaFromCoordinates(avgLat, avgLon);
+          if (oceanOrSea) {
+            calculatedLocationName = oceanOrSea;
+          }
+        }
+
+        const avgMarker = L.marker([avgLat, avgLon], { icon: redIcon })
+          .addTo(map)
+          .bindPopup(calculatedLocationName).openPopup();
+        markers.push(avgMarker);
+
+        document.getElementById('calculatedLocation').textContent = calculatedLocationName;
+        document.getElementById('wikiLink').innerHTML = calculatedLocationName !== "In the middle of the ocean" ? `
+          <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(calculatedLocationName)}" target="_blank">
+            Learn more about ${calculatedLocationName} on Wikipedia
+          </a>
+        ` : "";
+      }
+    }
+
+    function calculateAverageLocation() {
+      let totalYears = 0, latSum = 0, lonSum = 0;
+      for (const loc of locations) {
+        totalYears += loc.years;
+        latSum += loc.lat * loc.years;
+        lonSum += loc.lon * loc.years;
+      }
+      const avgLat = latSum / totalYears;
+      const avgLon = lonSum / totalYears;
+      return { avgLat, avgLon };
+    }
+
+    function shareToSocialMedia(platform) {
+      const calculatedLocationText = document.getElementById('calculatedLocation').textContent.trim();
+      if (!calculatedLocationText) {
+        alert("Please calculate your average location first!");
+        return;
+      }
+      
+      const shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
+      let url = '';
+      
+      if (platform === 'twitter') {
+        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+      } else if (platform === 'facebook') {
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://megadave66.github.io/whereamifrom')}`;
+      } else if (platform === 'whatsapp') {
+        url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      }
+      
+      window.open(url, '_blank');
+    }
+  </script>
+  <div id="inspired-by">
+    <h3>Inspired by:</h3>
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/1ocxdHSV5Sk" frameborder="0" allowfullscreen></iframe>
+    <p>To see when Don McMillan is performing near you or to book him for a corporate comedy gig, click this link: <a href="https://technicallyfunny.com/" target="_blank">https://technicallyfunny.com/</a></p>
+  </div>
+
+  <div id="created-by">
+    <h3>Created by:</h3>
+    <p>I'm David, I'm 11 years old, and I love to code. My father, Niall, came up with the idea for this project. To be honest, I used ChatGPT a lot for this project. I also used GitHub to store the code for this site, and you can find the code at <a href="https://github.com/megadave66/whereamifrom" target="_blank">https://github.com/megadave66/whereamifrom</a>.</p>
+  </div>
+
 </body>
 </html>
