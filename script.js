@@ -99,8 +99,9 @@ function calculateAverageLocation() {
 }
 
 function shareToSocialMedia(platform) {
-  shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
-  calculatedLocationText = document.getElementById('calculatedLocation').textContent.replace('Your average location:', '').trim();
+  // Ensure calculatedLocationText is set before shareText
+  const calculatedLocationText = document.getElementById('calculatedLocation').textContent.trim();
+  const shareText = `I am from ${calculatedLocationText} based on all the places I have lived in my life. Where are you from? Find out at https://megadave66.github.io/whereamifrom!`;
   let url = '';
   
   if (platform === 'twitter') {
@@ -115,5 +116,3 @@ function shareToSocialMedia(platform) {
   }
   window.open(url, '_blank');
 }
-
-document.getElementById('locations').addEventListener('change', calculateWeightedAverage);
