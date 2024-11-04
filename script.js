@@ -60,7 +60,9 @@ async function calculateWeightedAverage() {
     const { avgLat, avgLon } = calculateAverageLocation();
     map.fitBounds(locations.map(loc => [loc.lat, loc.lon]));
 
+    // Store only the location name
     const calculatedLocationName = await reverseGeocode(avgLat, avgLon);
+
     const redIcon = L.icon({
       iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-red.png',
       iconSize: [25, 41],
@@ -70,11 +72,11 @@ async function calculateWeightedAverage() {
 
     const avgMarker = L.marker([avgLat, avgLon], { icon: redIcon })
       .addTo(map)
-      .bindPopup(`You are from ${calculatedLocationName}`).openPopup();
+      .bindPopup(calculatedLocationName).openPopup();
     markers.push(avgMarker); // Store the average location marker
 
-    document.getElementById('calculatedLocation').textContent =
-      `Your average location: ${calculatedLocationName}`;
+    // Display only the location name in the calculatedLocation element
+    document.getElementById('calculatedLocation').textContent = calculatedLocationName;
     document.getElementById('wikiLink').innerHTML = `
       <a href="https://en.wikipedia.org/wiki/${calculatedLocationName}" target="_blank">
         Learn more about ${calculatedLocationName} on Wikipedia
@@ -82,6 +84,7 @@ async function calculateWeightedAverage() {
     `;
   }
 }
+
 
 function calculateAverageLocation() {
   let totalYears = 0, latSum = 0, lonSum = 0;
